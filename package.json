@@ -1,0 +1,24 @@
+{
+  "name": "safahat-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Safahat — Arabic-first PDF reader, editor, annotator and scanner",
+  "author": "Safahat",
+  "license": "UNLICENSED",
+  "scripts": {
+    "postinstall": "echo 'Run: npx cap add android && npx cap add ios'",
+    "sync:android": "npx cap sync android",
+    "sync:ios": "npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
