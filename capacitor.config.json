@@ -1,0 +1,36 @@
+{
+  "appId": "com.safahat.app",
+  "appName": "Safahat",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0f1b1e",
+    "limitsNavigationsToAppBoundDomains": false,
+    "allowsLinkPreview": false
+  },
+  "android": {
+    "backgroundColor": "#0f1b1e",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "backgroundColor": "#0f1b1e",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0f1b1e",
+      "overlaysWebView": false
+    }
+  }
+}
