@@ -1,0 +1,89 @@
+name: Build iOS IPA (unsigned)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Add iOS platform
+        run: |
+          if [ ! -d "ios" ]; then
+            npx cap add ios
+          fi
+
+      - name: Configure Info.plist permissions
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          if [ -f "$PLIST" ]; then
+            /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Safahat uses the camera to scan documents and ID cards.'" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Safahat imports images to create PDFs.'" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string 'Safahat saves scanned pages to your photo library.'" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Safahat records voice notes.'" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :UIFileSharingEnabled bool true" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :LSSupportsOpeningDocumentsInPlace bool true" "$PLIST" 2>/dev/null || true
+          fi
+
+      - name: Sync web assets
+        run: npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          if [ -d "ios/App" ] && [ -f "ios/App/Podfile" ]; then
+            cd ios/App
+            pod install --repo-update || pod install
+          fi
+
+      - name: Build unsigned archive
+        working-directory: ios/App
+        run: |
+          xcodebuild clean archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath "$PWD/build/App.xcarchive" \
+            -derivedDataPath "$PWD/build/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ONLY_ACTIVE_ARCH=NO 2>&1 | tail -80
+
+      - name: Package IPA
+        run: |
+          APP="ios/App/build/App.xcarchive/Products/Applications/App.app"
+          if [ ! -d "$APP" ]; then
+            echo "❌ App.app not found at $APP"
+            echo "Contents of xcarchive:"
+            ls -R ios/App/build/App.xcarchive/Products/ 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p ios/App/build/Payload
+          cp -R "$APP" ios/App/build/Payload/
+          cd ios/App/build
+          zip -rq Safahat-unsigned.ipa Payload
+          ls -la Safahat-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: safahat-ipa
+          path: ios/App/build/Safahat-unsigned.ipa
+          retention-days: 30
+          if-no-files-found: error
